@@ -1,29 +1,28 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
+import { Store } from '@ngrx/store';
 import { CreateMovie } from '../../types/movie';
+import { MoviesActions } from '../../ngrx/movies/movies.actions';
+import { selectError, selectSaving } from '../../ngrx/movies/movies.selectors';
 
 /**
- * CREATE
- * Flow: reactive form validate -> service.createMovie() -> subscribe -> navigate to list.
- * Why ReactiveForms? Built-in validators and easy getRawValue() for the POST body.
+ * CREATE: validate form → dispatch createMovie → Effect POSTs → success Effect navigates home.
  */
 @Component({
   selector: 'app-movie-create',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AsyncPipe],
   templateUrl: './movie-create.html',
   styleUrl: './movie-create.scss',
 })
 export class MovieCreate implements OnDestroy {
-  private readonly api = inject(MovieAppService);
+  private readonly store = inject(Store);
   private readonly router = inject(Router);
   private readonly fb = inject(FormBuilder);
-  private sub?: Subscription;
 
-  saving = false;
-  error: string | null = null;
+  readonly saving$ = this.store.select(selectSaving);
+  readonly error$ = this.store.select(selectError);
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2)]],
@@ -37,23 +36,8 @@ export class MovieCreate implements OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
-
     const payload: CreateMovie = this.form.getRawValue();
-    this.saving = true;
-    this.error = null;
-
-    this.sub?.unsubscribe();
-    this.sub = this.api.createMovie(payload).subscribe({
-      next: () => {
-        this.saving = false;
-        // After create, go back to the list so the user sees the new row after reload.
-        this.router.navigate(['/home']);
-      },
-      error: () => {
-        this.error = 'Failed to create movie';
-        this.saving = false;
-      },
-    });
+    this.store.dispatch(MoviesActions.createMovie({ payload }));
   }
 
   cancel(): void {
@@ -61,6 +45,7 @@ export class MovieCreate implements OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    // Clear sticky error/saving flags when leaving the screen.
+    this.store.dispatch(MoviesActions.clearMutationStatus());
   }
 }

@@ -1,33 +1,40 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
+import { Store } from '@ngrx/store';
+import { filter, take } from 'rxjs';
 import { UpdateMovie } from '../../types/movie';
+import { MoviesActions } from '../../ngrx/movies/movies.actions';
+import {
+  selectError,
+  selectLoading,
+  selectSaving,
+  selectSelectedMovie,
+} from '../../ngrx/movies/movies.selectors';
 
 /**
- * UPDATE
- * Flow: load movie by id -> patchValue into form -> on save PUT via service -> navigate home.
+ * EDIT: load movie into store → patch form once from selectedMovie$ → dispatch updateMovie.
+ * We use take(1) so we only patch when the movie first arrives (no signals/effects).
  */
 @Component({
   selector: 'app-movie-edit',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, AsyncPipe],
   templateUrl: './movie-edit.html',
   styleUrl: './movie-edit.scss',
 })
 export class MovieEdit implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(MovieAppService);
+  private readonly store = inject(Store);
   private readonly fb = inject(FormBuilder);
-  private loadSub?: Subscription;
-  private saveSub?: Subscription;
 
   id = NaN;
-  loading = false;
-  saving = false;
-  loadError: string | null = null;
-  saveError: string | null = null;
+
+  readonly movie$ = this.store.select(selectSelectedMovie);
+  readonly loading$ = this.store.select(selectLoading);
+  readonly saving$ = this.store.select(selectSaving);
+  readonly error$ = this.store.select(selectError);
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2)]],
@@ -39,26 +46,25 @@ export class MovieEdit implements OnInit, OnDestroy {
   ngOnInit(): void {
     this.id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(this.id)) {
-      this.loadError = 'Invalid movie id';
+      this.store.dispatch(MoviesActions.loadMovieFailure({ error: 'Invalid movie id' }));
       return;
     }
 
-    this.loading = true;
-    this.loadSub = this.api.getMovieById(this.id).subscribe({
-      next: (movie) => {
+    this.store.dispatch(MoviesActions.loadMovie({ id: this.id }));
+
+    this.movie$
+      .pipe(
+        filter((movie) => !!movie),
+        take(1)
+      )
+      .subscribe((movie) => {
         this.form.patchValue({
-          title: movie.title,
-          director: movie.director,
-          genre: movie.genre,
-          year_of_release: movie.year_of_release,
+          title: movie!.title,
+          director: movie!.director,
+          genre: movie!.genre,
+          year_of_release: movie!.year_of_release,
         });
-        this.loading = false;
-      },
-      error: () => {
-        this.loadError = 'Failed to load movie';
-        this.loading = false;
-      },
-    });
+      });
   }
 
   save(): void {
@@ -66,22 +72,8 @@ export class MovieEdit implements OnInit, OnDestroy {
       this.form.markAllAsTouched();
       return;
     }
-
     const payload: UpdateMovie = this.form.getRawValue();
-    this.saving = true;
-    this.saveError = null;
-
-    this.saveSub?.unsubscribe();
-    this.saveSub = this.api.updateMovie(this.id, payload).subscribe({
-      next: () => {
-        this.saving = false;
-        this.router.navigate(['/home']);
-      },
-      error: () => {
-        this.saveError = 'Failed to update movie';
-        this.saving = false;
-      },
-    });
+    this.store.dispatch(MoviesActions.updateMovie({ id: this.id, payload }));
   }
 
   cancel(): void {
@@ -89,7 +81,7 @@ export class MovieEdit implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.loadSub?.unsubscribe();
-    this.saveSub?.unsubscribe();
+    this.store.dispatch(MoviesActions.clearMutationStatus());
+    this.store.dispatch(MoviesActions.clearSelectedMovie());
   }
 }

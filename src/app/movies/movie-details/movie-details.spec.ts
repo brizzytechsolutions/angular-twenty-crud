@@ -1,11 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter, ActivatedRoute } from '@angular/router';
-import { of } from 'rxjs';
+import { provideMockStore } from '@ngrx/store/testing';
 import { MovieDetails } from './movie-details';
-import { MovieAppService } from '../../services/movie-app.service';
 
 describe('MovieDetails', () => {
-  let component: MovieDetails;
   let fixture: ComponentFixture<MovieDetails>;
 
   beforeEach(async () => {
@@ -13,32 +11,15 @@ describe('MovieDetails', () => {
       imports: [MovieDetails],
       providers: [
         provideRouter([]),
-        {
-          provide: ActivatedRoute,
-          useValue: { snapshot: { paramMap: { get: () => '1' } } },
-        },
-        {
-          provide: MovieAppService,
-          useValue: {
-            getMovieById: () =>
-              of({
-                id: 1,
-                title: 'Test',
-                director: 'Dir',
-                genre: 'Drama',
-                year_of_release: 2020,
-              }),
-          },
-        },
+        provideMockStore({ initialState: { movies: {} } }),
+        { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => '1' } } } },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(MovieDetails);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

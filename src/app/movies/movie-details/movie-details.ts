@@ -1,49 +1,41 @@
+import { AsyncPipe } from '@angular/common';
 import { Component, OnDestroy, OnInit, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
-import { Movie } from '../../types/movie';
+import { Store } from '@ngrx/store';
+import { MoviesActions } from '../../ngrx/movies/movies.actions';
+import {
+  selectError,
+  selectLoading,
+  selectSelectedMovie,
+} from '../../ngrx/movies/movies.selectors';
 
 /**
- * DETAILS (Read one)
- * Flow: read :id from ActivatedRoute -> getMovieById(id) -> subscribe -> show movie.
+ * DETAILS: read route id → dispatch loadMovie → select selectedMovie$ with async pipe.
  */
 @Component({
   selector: 'app-movie-details',
-  imports: [RouterLink],
+  imports: [RouterLink, AsyncPipe],
   templateUrl: './movie-details.html',
   styleUrl: './movie-details.scss',
 })
 export class MovieDetails implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
-  private readonly api = inject(MovieAppService);
-  private sub?: Subscription;
+  private readonly store = inject(Store);
 
-  movie: Movie | null = null;
-  loading = false;
-  error: string | null = null;
+  readonly movie$ = this.store.select(selectSelectedMovie);
+  readonly loading$ = this.store.select(selectLoading);
+  readonly error$ = this.store.select(selectError);
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(id)) {
-      this.error = 'Invalid movie id';
+      this.store.dispatch(MoviesActions.loadMovieFailure({ error: 'Invalid movie id' }));
       return;
     }
-
-    this.loading = true;
-    this.sub = this.api.getMovieById(id).subscribe({
-      next: (movie) => {
-        this.movie = movie;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load movie';
-        this.loading = false;
-      },
-    });
+    this.store.dispatch(MoviesActions.loadMovie({ id }));
   }
 
   ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.store.dispatch(MoviesActions.clearSelectedMovie());
   }
 }

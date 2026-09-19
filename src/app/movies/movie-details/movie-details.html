@@ -4,11 +4,11 @@
     <a class="btn btn-secondary" routerLink="/home">Back</a>
   </div>
 
-  @if (loading) {
+  @if (loading$ | async) {
     <div class="alert alert-info">Loading...</div>
-  } @else if (error) {
+  } @else if (error$ | async; as error) {
     <div class="alert alert-danger">{{ error }}</div>
-  } @else if (movie) {
+  } @else if (movie$ | async; as movie) {
     <ul class="list-group">
       <li class="list-group-item"><b>ID:</b> {{ movie.id }}</li>
       <li class="list-group-item"><b>Title:</b> {{ movie.title }}</li>

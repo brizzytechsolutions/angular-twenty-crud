@@ -1,55 +1,37 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
-import { Movie } from '../../types/movie';
+import { Store } from '@ngrx/store';
+import { MoviesActions } from '../../ngrx/movies/movies.actions';
+import {
+  selectError,
+  selectLoading,
+  selectMovies,
+} from '../../ngrx/movies/movies.selectors';
 
 /**
- * LIST (Read many)
- * Flow: ngOnInit -> service.getMovies() -> subscribe -> assign plain properties -> template re-renders.
- * We keep a Subscription and unsubscribe in ngOnDestroy to avoid memory leaks.
+ * LIST with NgRx:
+ * dispatch load → Effect calls API → reducer updates store → select Observables → async pipe.
+ * No signals here on purpose — we use RxJS Observables + async pipe.
  */
 @Component({
   selector: 'app-movie-list',
-  imports: [RouterLink],
+  imports: [RouterLink, AsyncPipe],
   templateUrl: './movie-list.html',
   styleUrl: './movie-list.scss',
 })
-export class MovieList implements OnInit, OnDestroy {
-  private readonly api = inject(MovieAppService);
-  private sub?: Subscription;
+export class MovieList implements OnInit {
+  private readonly store = inject(Store);
 
-  movies: Movie[] = [];
-  loading = false;
-  error: string | null = null;
+  readonly movies$ = this.store.select(selectMovies);
+  readonly loading$ = this.store.select(selectLoading);
+  readonly error$ = this.store.select(selectError);
 
   ngOnInit(): void {
-    this.loadMovies();
+    this.store.dispatch(MoviesActions.loadMovies());
   }
 
   reload(): void {
-    this.loadMovies();
-  }
-
-  private loadMovies(): void {
-    this.loading = true;
-    this.error = null;
-
-    // Cancel any in-flight request before starting a new one.
-    this.sub?.unsubscribe();
-    this.sub = this.api.getMovies().subscribe({
-      next: (movies) => {
-        this.movies = movies;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load movies';
-        this.loading = false;
-      },
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.store.dispatch(MoviesActions.loadMovies());
   }
 }
