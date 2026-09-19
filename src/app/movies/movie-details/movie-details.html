@@ -1,0 +1,25 @@
+<div class="card p-3">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="m-0">Movie Details</h4>
+    <a class="btn btn-secondary" routerLink="/home">Back</a>
+  </div>
+
+  @if (loading) {
+    <div class="alert alert-info">Loading...</div>
+  } @else if (error) {
+    <div class="alert alert-danger">{{ error }}</div>
+  } @else if (movie) {
+    <ul class="list-group">
+      <li class="list-group-item"><b>ID:</b> {{ movie.id }}</li>
+      <li class="list-group-item"><b>Title:</b> {{ movie.title }}</li>
+      <li class="list-group-item"><b>Director:</b> {{ movie.director }}</li>
+      <li class="list-group-item"><b>Genre:</b> {{ movie.genre }}</li>
+      <li class="list-group-item"><b>Year:</b> {{ movie.year_of_release }}</li>
+    </ul>
+
+    <div class="d-flex gap-2 mt-3">
+      <a class="btn btn-primary" [routerLink]="['/home', movie.id, 'edit']">Edit</a>
+      <a class="btn btn-danger" [routerLink]="['/home', movie.id, 'delete']">Delete</a>
+    </div>
+  }
+</div>
