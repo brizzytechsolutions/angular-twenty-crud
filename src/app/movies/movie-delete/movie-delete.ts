@@ -1,13 +1,7 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
-import { Movie } from '../../types/movie';
+import { MoviesStore } from '../../store/movies.store';
 
-/**
- * DELETE
- * Flow: load movie for confirmation UI -> confirmDelete() -> service.deleteMovie() -> navigate home.
- */
 @Component({
   selector: 'app-movie-delete',
   imports: [RouterLink],
@@ -15,57 +9,28 @@ import { Movie } from '../../types/movie';
   styleUrl: './movie-delete.scss',
 })
 export class MovieDelete implements OnInit, OnDestroy {
+  readonly store = inject(MoviesStore);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly api = inject(MovieAppService);
-  private loadSub?: Subscription;
-  private deleteSub?: Subscription;
 
-  id = NaN;
-  movie: Movie | null = null;
-  loading = false;
-  deleting = false;
-  loadError: string | null = null;
-  deleteError: string | null = null;
+  readonly id = signal(NaN);
 
   ngOnInit(): void {
-    this.id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(this.id)) {
-      this.loadError = 'Invalid movie id';
+    const routeId = Number(this.route.snapshot.paramMap.get('id'));
+    this.id.set(routeId);
+    if (!Number.isFinite(routeId)) {
+      this.store.setError('Invalid movie id');
       return;
     }
-
-    this.loading = true;
-    this.loadSub = this.api.getMovieById(this.id).subscribe({
-      next: (movie) => {
-        this.movie = movie;
-        this.loading = false;
-      },
-      error: () => {
-        this.loadError = 'Failed to load movie';
-        this.loading = false;
-      },
-    });
+    this.store.loadMovie(routeId);
   }
 
   confirmDelete(): void {
-    if (!Number.isFinite(this.id)) {
+    const movieId = this.id();
+    if (!Number.isFinite(movieId)) {
       return;
     }
-
-    this.deleting = true;
-    this.deleteError = null;
-    this.deleteSub?.unsubscribe();
-    this.deleteSub = this.api.deleteMovie(this.id).subscribe({
-      next: () => {
-        this.deleting = false;
-        this.router.navigate(['/home']);
-      },
-      error: () => {
-        this.deleteError = 'Failed to delete movie';
-        this.deleting = false;
-      },
-    });
+    this.store.deleteMovie(movieId);
   }
 
   cancel(): void {
@@ -73,7 +38,7 @@ export class MovieDelete implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.loadSub?.unsubscribe();
-    this.deleteSub?.unsubscribe();
+    this.store.clearStatus();
+    this.store.clearSelectedMovie();
   }
 }

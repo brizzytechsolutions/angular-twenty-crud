@@ -1,11 +1,11 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
+import { provideHttpClient } from '@angular/common/http';
+import { of } from 'rxjs';
 import { MovieCreate } from './movie-create';
 import { MovieAppService } from '../../services/movie-app.service';
-import { of } from 'rxjs';
 
 describe('MovieCreate', () => {
-  let component: MovieCreate;
   let fixture: ComponentFixture<MovieCreate>;
 
   beforeEach(async () => {
@@ -13,16 +13,15 @@ describe('MovieCreate', () => {
       imports: [MovieCreate],
       providers: [
         provideRouter([]),
+        provideHttpClient(),
         { provide: MovieAppService, useValue: { createMovie: () => of({}) } },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(MovieCreate);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

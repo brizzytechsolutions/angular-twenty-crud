@@ -1,13 +1,10 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { Subscription } from 'rxjs';
-import { MovieAppService } from '../../services/movie-app.service';
-import { Movie } from '../../types/movie';
+import { MoviesStore } from '../../store/movies.store';
 
 /**
- * LIST (Read many)
- * Flow: ngOnInit -> service.getMovies() -> subscribe -> assign plain properties -> template re-renders.
- * We keep a Subscription and unsubscribe in ngOnDestroy to avoid memory leaks.
+ * LIST with NgRx Signals:
+ * inject MoviesStore → call loadMovies() → template reads store.movies() / store.loading().
  */
 @Component({
   selector: 'app-movie-list',
@@ -15,41 +12,15 @@ import { Movie } from '../../types/movie';
   templateUrl: './movie-list.html',
   styleUrl: './movie-list.scss',
 })
-export class MovieList implements OnInit, OnDestroy {
-  private readonly api = inject(MovieAppService);
-  private sub?: Subscription;
-
-  movies: Movie[] = [];
-  loading = false;
-  error: string | null = null;
+export class MovieList implements OnInit {
+  // Store is providedIn:'root' — shared across routes like a mini global store.
+  readonly store = inject(MoviesStore);
 
   ngOnInit(): void {
-    this.loadMovies();
+    this.store.loadMovies();
   }
 
   reload(): void {
-    this.loadMovies();
-  }
-
-  private loadMovies(): void {
-    this.loading = true;
-    this.error = null;
-
-    // Cancel any in-flight request before starting a new one.
-    this.sub?.unsubscribe();
-    this.sub = this.api.getMovies().subscribe({
-      next: (movies) => {
-        this.movies = movies;
-        this.loading = false;
-      },
-      error: () => {
-        this.error = 'Failed to load movies';
-        this.loading = false;
-      },
-    });
-  }
-
-  ngOnDestroy(): void {
-    this.sub?.unsubscribe();
+    this.store.loadMovies();
   }
 }
