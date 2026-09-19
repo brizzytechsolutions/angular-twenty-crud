@@ -17,7 +17,7 @@ describe('AppConfigService', () => {
 
   afterEach(() => httpMock.verify());
 
-  it('should load apiBaseUrl from assets', async () => {
+  it('should expose apiBaseUrl as a computed signal', async () => {
     const promise = service.load();
     const req = httpMock.expectOne('/assets/app-config.json');
     req.flush({ apiBaseUrl: 'http://localhost:3000/api' });

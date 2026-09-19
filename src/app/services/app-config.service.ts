@@ -1,5 +1,5 @@
 import { HttpClient } from '@angular/common/http';
-import { Injectable, inject } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 
 type AppRuntimeConfig = {
@@ -7,24 +7,26 @@ type AppRuntimeConfig = {
 };
 
 /**
- * Loads /assets/app-config.json once at startup.
- * We use a plain property (not a signal) so beginners can see classic DI + RxJS.
+ * Config as a signal so dependents can react if we ever reload config.
+ * computed() derives apiBaseUrl safely for templates/services.
  */
 @Injectable({ providedIn: 'root' })
 export class AppConfigService {
   private readonly http = inject(HttpClient);
-  private config: AppRuntimeConfig | null = null;
+  private readonly config = signal<AppRuntimeConfig | null>(null);
 
-  async load(): Promise<void> {
-    this.config = await firstValueFrom(
-      this.http.get<AppRuntimeConfig>('/assets/app-config.json')
-    );
-  }
-
-  apiBaseUrl(): string {
-    if (!this.config?.apiBaseUrl) {
+  readonly apiBaseUrl = computed(() => {
+    const value = this.config()?.apiBaseUrl;
+    if (!value) {
       throw new Error('API base URL is not configured');
     }
-    return this.config.apiBaseUrl;
+    return value;
+  });
+
+  async load(): Promise<void> {
+    const data = await firstValueFrom(
+      this.http.get<AppRuntimeConfig>('/assets/app-config.json')
+    );
+    this.config.set(data);
   }
 }

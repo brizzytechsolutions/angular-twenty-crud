@@ -1,13 +1,9 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MovieAppService } from '../../services/movie-app.service';
 import { Movie } from '../../types/movie';
 
-/**
- * DELETE
- * Flow: load movie for confirmation UI -> confirmDelete() -> service.deleteMovie() -> navigate home.
- */
 @Component({
   selector: 'app-movie-delete',
   imports: [RouterLink],
@@ -21,49 +17,51 @@ export class MovieDelete implements OnInit, OnDestroy {
   private loadSub?: Subscription;
   private deleteSub?: Subscription;
 
-  id = NaN;
-  movie: Movie | null = null;
-  loading = false;
-  deleting = false;
-  loadError: string | null = null;
-  deleteError: string | null = null;
+  readonly id = signal(NaN);
+  readonly movie = signal<Movie | null>(null);
+  readonly loading = signal(false);
+  readonly deleting = signal(false);
+  readonly loadError = signal<string | null>(null);
+  readonly deleteError = signal<string | null>(null);
 
   ngOnInit(): void {
-    this.id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(this.id)) {
-      this.loadError = 'Invalid movie id';
+    const routeId = Number(this.route.snapshot.paramMap.get('id'));
+    this.id.set(routeId);
+    if (!Number.isFinite(routeId)) {
+      this.loadError.set('Invalid movie id');
       return;
     }
 
-    this.loading = true;
-    this.loadSub = this.api.getMovieById(this.id).subscribe({
+    this.loading.set(true);
+    this.loadSub = this.api.getMovieById(routeId).subscribe({
       next: (movie) => {
-        this.movie = movie;
-        this.loading = false;
+        this.movie.set(movie);
+        this.loading.set(false);
       },
       error: () => {
-        this.loadError = 'Failed to load movie';
-        this.loading = false;
+        this.loadError.set('Failed to load movie');
+        this.loading.set(false);
       },
     });
   }
 
   confirmDelete(): void {
-    if (!Number.isFinite(this.id)) {
+    const movieId = this.id();
+    if (!Number.isFinite(movieId)) {
       return;
     }
 
-    this.deleting = true;
-    this.deleteError = null;
+    this.deleting.set(true);
+    this.deleteError.set(null);
     this.deleteSub?.unsubscribe();
-    this.deleteSub = this.api.deleteMovie(this.id).subscribe({
+    this.deleteSub = this.api.deleteMovie(movieId).subscribe({
       next: () => {
-        this.deleting = false;
+        this.deleting.set(false);
         this.router.navigate(['/home']);
       },
       error: () => {
-        this.deleteError = 'Failed to delete movie';
-        this.deleting = false;
+        this.deleteError.set('Failed to delete movie');
+        this.deleting.set(false);
       },
     });
   }

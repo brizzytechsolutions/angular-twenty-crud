@@ -1,8 +1,7 @@
-<app-nav-toolbar [appTitle]="title"></app-nav-toolbar>
+<app-nav-toolbar [appTitle]="title()"></app-nav-toolbar>
 
 <div class="main-layout">
   <main class="content-area">
-    <!-- Router swaps movie screens here based on the URL. -->
     <router-outlet></router-outlet>
   </main>
 

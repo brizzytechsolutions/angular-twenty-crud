@@ -5,7 +5,6 @@ import { MovieDetails } from './movie-details';
 import { MovieAppService } from '../../services/movie-app.service';
 
 describe('MovieDetails', () => {
-  let component: MovieDetails;
   let fixture: ComponentFixture<MovieDetails>;
 
   beforeEach(async () => {
@@ -32,13 +31,11 @@ describe('MovieDetails', () => {
         },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(MovieDetails);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

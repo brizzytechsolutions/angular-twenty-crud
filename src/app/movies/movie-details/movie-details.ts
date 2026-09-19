@@ -1,13 +1,9 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MovieAppService } from '../../services/movie-app.service';
 import { Movie } from '../../types/movie';
 
-/**
- * DETAILS (Read one)
- * Flow: read :id from ActivatedRoute -> getMovieById(id) -> subscribe -> show movie.
- */
 @Component({
   selector: 'app-movie-details',
   imports: [RouterLink],
@@ -19,26 +15,26 @@ export class MovieDetails implements OnInit, OnDestroy {
   private readonly api = inject(MovieAppService);
   private sub?: Subscription;
 
-  movie: Movie | null = null;
-  loading = false;
-  error: string | null = null;
+  readonly movie = signal<Movie | null>(null);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     const id = Number(this.route.snapshot.paramMap.get('id'));
     if (!Number.isFinite(id)) {
-      this.error = 'Invalid movie id';
+      this.error.set('Invalid movie id');
       return;
     }
 
-    this.loading = true;
+    this.loading.set(true);
     this.sub = this.api.getMovieById(id).subscribe({
       next: (movie) => {
-        this.movie = movie;
-        this.loading = false;
+        this.movie.set(movie);
+        this.loading.set(false);
       },
       error: () => {
-        this.error = 'Failed to load movie';
-        this.loading = false;
+        this.error.set('Failed to load movie');
+        this.loading.set(false);
       },
     });
   }

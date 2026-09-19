@@ -5,7 +5,6 @@ import { MovieDelete } from './movie-delete';
 import { MovieAppService } from '../../services/movie-app.service';
 
 describe('MovieDelete', () => {
-  let component: MovieDelete;
   let fixture: ComponentFixture<MovieDelete>;
 
   beforeEach(async () => {
@@ -33,13 +32,11 @@ describe('MovieDelete', () => {
         },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(MovieDelete);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

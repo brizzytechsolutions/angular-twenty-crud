@@ -5,7 +5,6 @@ import { MovieEdit } from './movie-edit';
 import { MovieAppService } from '../../services/movie-app.service';
 
 describe('MovieEdit', () => {
-  let component: MovieEdit;
   let fixture: ComponentFixture<MovieEdit>;
 
   beforeEach(async () => {
@@ -33,13 +32,11 @@ describe('MovieEdit', () => {
         },
       ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(MovieEdit);
-    component = fixture.componentInstance;
     fixture.detectChanges();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

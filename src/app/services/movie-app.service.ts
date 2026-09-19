@@ -5,8 +5,8 @@ import { AppConfigService } from './app-config.service';
 import { CreateMovie, Movie, UpdateMovie } from '../types/movie';
 
 /**
- * Single place for HTTP movie API calls.
- * Components subscribe to these Observables — no store, no signals.
+ * HTTP stays Observable-based (HttpClient is RxJS-native).
+ * Components convert results into signals with .subscribe() + signal.set().
  */
 @Injectable({ providedIn: 'root' })
 export class MovieAppService {

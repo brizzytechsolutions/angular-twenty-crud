@@ -1,14 +1,10 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MovieAppService } from '../../services/movie-app.service';
 import { UpdateMovie } from '../../types/movie';
 
-/**
- * UPDATE
- * Flow: load movie by id -> patchValue into form -> on save PUT via service -> navigate home.
- */
 @Component({
   selector: 'app-movie-edit',
   imports: [ReactiveFormsModule, RouterLink],
@@ -23,11 +19,11 @@ export class MovieEdit implements OnInit, OnDestroy {
   private loadSub?: Subscription;
   private saveSub?: Subscription;
 
-  id = NaN;
-  loading = false;
-  saving = false;
-  loadError: string | null = null;
-  saveError: string | null = null;
+  readonly id = signal(NaN);
+  readonly loading = signal(false);
+  readonly saving = signal(false);
+  readonly loadError = signal<string | null>(null);
+  readonly saveError = signal<string | null>(null);
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2)]],
@@ -37,14 +33,15 @@ export class MovieEdit implements OnInit, OnDestroy {
   });
 
   ngOnInit(): void {
-    this.id = Number(this.route.snapshot.paramMap.get('id'));
-    if (!Number.isFinite(this.id)) {
-      this.loadError = 'Invalid movie id';
+    const routeId = Number(this.route.snapshot.paramMap.get('id'));
+    this.id.set(routeId);
+    if (!Number.isFinite(routeId)) {
+      this.loadError.set('Invalid movie id');
       return;
     }
 
-    this.loading = true;
-    this.loadSub = this.api.getMovieById(this.id).subscribe({
+    this.loading.set(true);
+    this.loadSub = this.api.getMovieById(routeId).subscribe({
       next: (movie) => {
         this.form.patchValue({
           title: movie.title,
@@ -52,34 +49,35 @@ export class MovieEdit implements OnInit, OnDestroy {
           genre: movie.genre,
           year_of_release: movie.year_of_release,
         });
-        this.loading = false;
+        this.loading.set(false);
       },
       error: () => {
-        this.loadError = 'Failed to load movie';
-        this.loading = false;
+        this.loadError.set('Failed to load movie');
+        this.loading.set(false);
       },
     });
   }
 
   save(): void {
-    if (!Number.isFinite(this.id) || this.form.invalid) {
+    const movieId = this.id();
+    if (!Number.isFinite(movieId) || this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
     const payload: UpdateMovie = this.form.getRawValue();
-    this.saving = true;
-    this.saveError = null;
+    this.saving.set(true);
+    this.saveError.set(null);
 
     this.saveSub?.unsubscribe();
-    this.saveSub = this.api.updateMovie(this.id, payload).subscribe({
+    this.saveSub = this.api.updateMovie(movieId, payload).subscribe({
       next: () => {
-        this.saving = false;
+        this.saving.set(false);
         this.router.navigate(['/home']);
       },
       error: () => {
-        this.saveError = 'Failed to update movie';
-        this.saving = false;
+        this.saveError.set('Failed to update movie');
+        this.saving.set(false);
       },
     });
   }

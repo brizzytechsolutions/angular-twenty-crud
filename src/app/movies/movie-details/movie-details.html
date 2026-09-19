@@ -4,22 +4,22 @@
     <a class="btn btn-secondary" routerLink="/home">Back</a>
   </div>
 
-  @if (loading) {
+  @if (loading()) {
     <div class="alert alert-info">Loading...</div>
-  } @else if (error) {
-    <div class="alert alert-danger">{{ error }}</div>
-  } @else if (movie) {
+  } @else if (error()) {
+    <div class="alert alert-danger">{{ error() }}</div>
+  } @else if (movie(); as m) {
     <ul class="list-group">
-      <li class="list-group-item"><b>ID:</b> {{ movie.id }}</li>
-      <li class="list-group-item"><b>Title:</b> {{ movie.title }}</li>
-      <li class="list-group-item"><b>Director:</b> {{ movie.director }}</li>
-      <li class="list-group-item"><b>Genre:</b> {{ movie.genre }}</li>
-      <li class="list-group-item"><b>Year:</b> {{ movie.year_of_release }}</li>
+      <li class="list-group-item"><b>ID:</b> {{ m.id }}</li>
+      <li class="list-group-item"><b>Title:</b> {{ m.title }}</li>
+      <li class="list-group-item"><b>Director:</b> {{ m.director }}</li>
+      <li class="list-group-item"><b>Genre:</b> {{ m.genre }}</li>
+      <li class="list-group-item"><b>Year:</b> {{ m.year_of_release }}</li>
     </ul>
 
     <div class="d-flex gap-2 mt-3">
-      <a class="btn btn-primary" [routerLink]="['/home', movie.id, 'edit']">Edit</a>
-      <a class="btn btn-danger" [routerLink]="['/home', movie.id, 'delete']">Delete</a>
+      <a class="btn btn-primary" [routerLink]="['/home', m.id, 'edit']">Edit</a>
+      <a class="btn btn-danger" [routerLink]="['/home', m.id, 'delete']">Delete</a>
     </div>
   }
 </div>

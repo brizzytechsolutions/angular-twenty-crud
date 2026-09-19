@@ -1,15 +1,10 @@
-import { Component, OnDestroy, inject } from '@angular/core';
+import { Component, OnDestroy, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MovieAppService } from '../../services/movie-app.service';
 import { CreateMovie } from '../../types/movie';
 
-/**
- * CREATE
- * Flow: reactive form validate -> service.createMovie() -> subscribe -> navigate to list.
- * Why ReactiveForms? Built-in validators and easy getRawValue() for the POST body.
- */
 @Component({
   selector: 'app-movie-create',
   imports: [ReactiveFormsModule, RouterLink],
@@ -22,8 +17,8 @@ export class MovieCreate implements OnDestroy {
   private readonly fb = inject(FormBuilder);
   private sub?: Subscription;
 
-  saving = false;
-  error: string | null = null;
+  readonly saving = signal(false);
+  readonly error = signal<string | null>(null);
 
   form = this.fb.nonNullable.group({
     title: ['', [Validators.required, Validators.minLength(2)]],
@@ -39,19 +34,18 @@ export class MovieCreate implements OnDestroy {
     }
 
     const payload: CreateMovie = this.form.getRawValue();
-    this.saving = true;
-    this.error = null;
+    this.saving.set(true);
+    this.error.set(null);
 
     this.sub?.unsubscribe();
     this.sub = this.api.createMovie(payload).subscribe({
       next: () => {
-        this.saving = false;
-        // After create, go back to the list so the user sees the new row after reload.
+        this.saving.set(false);
         this.router.navigate(['/home']);
       },
       error: () => {
-        this.error = 'Failed to create movie';
-        this.saving = false;
+        this.error.set('Failed to create movie');
+        this.saving.set(false);
       },
     });
   }

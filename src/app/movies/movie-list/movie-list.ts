@@ -1,13 +1,13 @@
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { Component, OnDestroy, OnInit, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { Subscription } from 'rxjs';
 import { MovieAppService } from '../../services/movie-app.service';
 import { Movie } from '../../types/movie';
 
 /**
- * LIST (Read many)
- * Flow: ngOnInit -> service.getMovies() -> subscribe -> assign plain properties -> template re-renders.
- * We keep a Subscription and unsubscribe in ngOnDestroy to avoid memory leaks.
+ * LIST with Signals:
+ * HTTP Observable → subscribe → signal.set() → template reads movies() / loading().
+ * Signals give fine-grained UI updates without NgRx.
  */
 @Component({
   selector: 'app-movie-list',
@@ -19,9 +19,9 @@ export class MovieList implements OnInit, OnDestroy {
   private readonly api = inject(MovieAppService);
   private sub?: Subscription;
 
-  movies: Movie[] = [];
-  loading = false;
-  error: string | null = null;
+  readonly movies = signal<Movie[]>([]);
+  readonly loading = signal(false);
+  readonly error = signal<string | null>(null);
 
   ngOnInit(): void {
     this.loadMovies();
@@ -32,19 +32,17 @@ export class MovieList implements OnInit, OnDestroy {
   }
 
   private loadMovies(): void {
-    this.loading = true;
-    this.error = null;
-
-    // Cancel any in-flight request before starting a new one.
+    this.loading.set(true);
+    this.error.set(null);
     this.sub?.unsubscribe();
     this.sub = this.api.getMovies().subscribe({
       next: (movies) => {
-        this.movies = movies;
-        this.loading = false;
+        this.movies.set(movies);
+        this.loading.set(false);
       },
       error: () => {
-        this.error = 'Failed to load movies';
-        this.loading = false;
+        this.error.set('Failed to load movies');
+        this.loading.set(false);
       },
     });
   }

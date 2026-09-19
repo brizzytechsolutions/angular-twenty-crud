@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { NavToolbar } from './layout/nav-toolbar/nav-toolbar';
 import { SideBar } from './layout/side-bar/side-bar';
@@ -11,6 +11,6 @@ import { Footer } from './layout/footer/footer';
   styleUrl: './app.scss',
 })
 export class App {
-  // Plain property (no signals) — good baseline for learning component state.
-  protected readonly title = 'Angular 22 Movies CRUD';
+  // Even the app title is a signal on this branch for consistency.
+  protected readonly title = signal('Angular 22 Movies CRUD (Signals)');
 }

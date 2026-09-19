@@ -4,38 +4,38 @@
     <a class="btn btn-secondary" routerLink="/home">Back</a>
   </div>
 
-  @if (loading) {
+  @if (loading()) {
     <div class="alert alert-info">Loading...</div>
-  } @else if (loadError) {
-    <div class="alert alert-danger">{{ loadError }}</div>
+  } @else if (loadError()) {
+    <div class="alert alert-danger">{{ loadError() }}</div>
   } @else {
-    @if (deleteError) {
-      <div class="alert alert-danger">{{ deleteError }}</div>
+    @if (deleteError()) {
+      <div class="alert alert-danger">{{ deleteError() }}</div>
     }
 
     <div class="alert alert-warning">
       Are you sure you want to delete this movie? This action cannot be undone.
     </div>
 
-    @if (movie) {
+    @if (movie(); as m) {
       <ul class="list-group mb-3">
-        <li class="list-group-item"><b>ID:</b> {{ movie.id }}</li>
-        <li class="list-group-item"><b>Title:</b> {{ movie.title }}</li>
-        <li class="list-group-item"><b>Director:</b> {{ movie.director }}</li>
-        <li class="list-group-item"><b>Genre:</b> {{ movie.genre }}</li>
-        <li class="list-group-item"><b>Year:</b> {{ movie.year_of_release }}</li>
+        <li class="list-group-item"><b>ID:</b> {{ m.id }}</li>
+        <li class="list-group-item"><b>Title:</b> {{ m.title }}</li>
+        <li class="list-group-item"><b>Director:</b> {{ m.director }}</li>
+        <li class="list-group-item"><b>Genre:</b> {{ m.genre }}</li>
+        <li class="list-group-item"><b>Year:</b> {{ m.year_of_release }}</li>
       </ul>
     }
 
     <div class="d-flex gap-2">
-      <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleting">
-        @if (deleting) {
+      <button class="btn btn-danger" (click)="confirmDelete()" [disabled]="deleting()">
+        @if (deleting()) {
           Deleting...
         } @else {
           Yes, delete
         }
       </button>
-      <button class="btn btn-outline-secondary" (click)="cancel()" [disabled]="deleting">Cancel</button>
+      <button class="btn btn-outline-secondary" (click)="cancel()" [disabled]="deleting()">Cancel</button>
     </div>
   }
 </div>
